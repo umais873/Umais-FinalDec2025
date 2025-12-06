@@ -1,23 +1,23 @@
 name: Node.js CI
 'on':
-  push:
+  push:                                # Run workflow automatically on push
     branches:
       - main
-  pull_request:
+  pull_request:                        # Run workflow on pull requests to main
     branches:
       - main
-  workflow_dispatch: null
+  workflow_dispatch: null              # Allows manual trigger from GitHub UI
 jobs:
-# Build----------------------------------------------------------------------------------------
+# ---------------------- Build & Test Job ----------------------
   build:
     name: Build & Test
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}          # Run on OS defined in matrix (Ubuntu & Windows)
     strategy:
       matrix:
-        os: 
+        os:                            # Matrix of OS to run jobs on
           - ubuntu-latest 
           - windows-latest
-        node-version:
+        node-version:                  # Multiple Node.js versions
           - 22.x
           - 20.x
           - 18.x
@@ -35,10 +35,10 @@ jobs:
         
       - name: Run test script
         run: npm test
-# Snyk----------------------------------------------------------------------------------------
+# ---------------------- Snyk Security Scan ----------------------
   snyk-scan:
     name: Snyk Security Scan
-    needs: build
+    needs: build                       # Runs only after build job completes successfully
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -52,18 +52,12 @@ jobs:
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: '${{ secrets.SNYK_TOKEN }}'
-        with:
-          args: '--sarif-file-output=snyk-results.sarif'
-      - name: Upload Snyk scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk-results.sarif
-# Docker---------------------------------------------------------------------------------------
+# ---------------------- Docker Hub Login ----------------------
   docker-login:
       name: Docker Hub Login
       needs:
         - build
-        - snyk-scan
+        - snyk-scan                    # Runs only after both build & snyk-scan complete
       runs-on: ubuntu-latest
       steps:
         - name: Log in to Docker Hub
